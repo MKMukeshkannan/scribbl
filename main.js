@@ -5,6 +5,7 @@ const {
   globalShortcut,
   Tray,
   Menu,
+  webContents,
 } = require("electron");
 require("dotenv").config();
 const applescript = require("applescript");
@@ -16,18 +17,21 @@ const createWindow = () => {
   const win = new BrowserWindow({
     width: 800,
     height: 800,
-    //titleBarStyle: "hiddenInset",
-    //focusable: false,
-    //alwaysOnTop: true,
+    titleBarStyle: "hiddenInset",
+    focusable: false,
+    alwaysOnTop: true,
     acceptFirstMouse: true,
     hasShadow: false,
-    //type: "panel",
+    type: "panel",
 
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
     },
   });
   win.loadFile("./renderer/index.html");
+  // setInterval(() => {
+  //   win.webContents.send("text", { name: "hello" });
+  // }, 1000);
 };
 
 app.whenReady().then(() => {
@@ -42,6 +46,8 @@ app.whenReady().then(() => {
   const ws = new WebSocket("wss://cloud.myscript.com/api/v4.0/iink/document");
   let isCompleteLoading = false;
   ws.on("error", console.error);
+
+  ws.on("close", () => console.log("closed"));
 
   ws.on("open", function open() {
     console.log("Connecting to the SOCKET . . .");
@@ -58,9 +64,14 @@ app.whenReady().then(() => {
   });
 
   ws.on("message", function message(data) {
-    console.log("Received: ", JSON.parse(data), "\n");
-
     const receivedData = JSON.parse(data);
+    const win = BrowserWindow.getAllWindows()[0];
+
+    receivedData.type === "exported" &&
+      console.log("Received: ", receivedData.exports["text/plain"], "\n");
+
+    receivedData.type === "exported" &&
+      win.webContents.send("text", receivedData.exports["text/plain"]);
 
     if (receivedData.type === "ack") {
       const hmac = computeHmac(
@@ -136,8 +147,40 @@ app.whenReady().then(() => {
         console.log(`Sent: ${{ ...addStroke }}`);
         ws.send(JSON.stringify(addStroke));
       });
+
+      ipcMain.on("content", (e, title) => {
+        const script = `tell application "System Events"
+              delay 0.5
+              keystroke "${title}"
+          end tell
+          `;
+
+        BrowserWindow.getAllWindows()[0].blur();
+        applescript.execString(script, (err) => {
+          if (err) {
+            console.error("Error inserting text:", err);
+          } else {
+            console.log("Text inserted successfully");
+          }
+        });
+
+        const ContentPart = JSON.stringify({
+          type: "newContentPart",
+          contentType: "TEXT",
+          mimeTypes: ["text/plain", "application/vnd.myscript.jiix"],
+        });
+        ws.send(ContentPart);
+      });
     }
   });
+
+  setInterval(() => {
+    ws.send(
+      JSON.stringify({
+        type: "ping",
+      })
+    );
+  }, 3000);
 });
 
 app.on("window-all-closed", () => {

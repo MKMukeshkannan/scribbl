@@ -2,15 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="content-type" content="text/html" />
-    <base href="." />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hello</title>
-    <style></style>
+    <style>
+      h1 {
+        display: block;
+        position: absolute;
+        font-family: monospace;
+        left: 20;
+        right: 20;
+      }
+    </style>
   </head>
   <body>
-    <h1 id="content"></h1>
+    <h1 id="displayTag"></h1>
     <canvas id="canvas"></canvas>
     <script type="module" src="./renderer.js"></script>
   </body>

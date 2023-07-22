@@ -1,21 +1,14 @@
-// const form = document.querySelector("#form");
-
-// form.addEventListener("submit", (e) => {
-//   e.preventDefault();
-
-//   const text = document.getElementById("name");
-//   ipcRenderer.send(text.value);
-// });
-
 const canvas = document.getElementById("canvas");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+const bg = "white";
 let context = canvas.getContext("2d");
-context.fillStyle = "red";
+context.fillStyle = bg;
 context.fillRect(0, 0, canvas.width, canvas.height);
 
 let isDrawing = false;
+const fadeTime = 3000;
 
 canvas.addEventListener("pointerdown", start, false);
 canvas.addEventListener("pointermove", draw, false);
@@ -24,7 +17,7 @@ canvas.addEventListener("pointerup", stop, false);
 
 let strokeId = 0;
 let currStroke;
-
+let timer;
 function start(e) {
   currStroke = {
     id: `pending-${strokeId}`,
@@ -37,6 +30,7 @@ function start(e) {
   isDrawing = true;
   context.beginPath();
   context.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+  clearTimeout(timer);
   e.preventDefault();
 }
 
@@ -53,8 +47,6 @@ function draw(e) {
     currStroke.y.push(e.y);
     currStroke.t.push(e.timeStamp);
     currStroke.p.push(1);
-
-    // console.log(e);
   }
 }
 
@@ -65,8 +57,24 @@ function stop(e) {
     isDrawing = false;
     strokeId++;
 
-    ipcRenderer.send(currStroke);
+    currStroke.x.length !== 0 && ipcRenderer.send(currStroke);
+
+    timer = setTimeout(clearCanvas, fadeTime);
   }
 
   e.preventDefault();
 }
+
+function clearCanvas() {
+  const display = document.getElementById("displayTag");
+
+  context.fillStyle = bg;
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  ipcRendererNewContent.send(display.innerText);
+}
+
+window.Bridge.text((e, v) => {
+  const display = document.getElementById("displayTag");
+  display.innerText = v;
+});
