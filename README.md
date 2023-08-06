@@ -39,10 +39,7 @@
 
 <h3>Working Sample</h3>
 
-https://github.com/MKMukeshkannan/scribbl/assets/119940345/37ffc4ad-3d75-49eb-9065-05735318e941
-
-
-
+https://github.com/MKMukeshkannan/scribbl/assets/119940345/a3419a8f-d064-4099-a179-9c2f914e831d
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
